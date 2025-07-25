@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AlgorithmParamList>
+    <ParamItem>
+        <Name>confThreshold</Name>
+        <DefaultValue>0.4</DefaultValue>
+    </ParamItem>
+    <ParamItem>
+        <Name>iouThreshold</Name>
+        <DefaultValue>0.45</DefaultValue>
+    </ParamItem>
+    <ParamItem>
+        <Name>labelsPath</Name>
+        <DefaultValue>D:\\Detection-Onnx\\Dataset\\names.txt</DefaultValue>
+    </ParamItem>
+    <ParamItem>
+        <Name>modelPath</Name>
+        <DefaultValue>D:\\Detection-Onnx\\Weights\\ball.onnx</DefaultValue>
+    </ParamItem>
+    <ParamItem>
+        <Name>useGPU</Name>
+        <DefaultValue>True</DefaultValue>
+    </ParamItem>
+</AlgorithmParamList>

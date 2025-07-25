@@ -1,0 +1,103 @@
+using System;
+using System.Text;
+using System.Windows.Forms;
+using Script.Methods;
+using System.Collections.Generic; // 必须添加，用于 List<>
+using System.Globalization;     // 必须添加，用于 CultureInfo
+
+/************************************
+Shell Module default code: using .NET Framwwork 4.6.1
+*************************************/
+public partial class UserScript : ScriptMethods, IProcessMethods
+{
+    // 模块默认字段
+    int processCount;
+
+    /// <summary>
+    /// 编译时初始化字段值。
+    /// </summary>
+    public void Init()
+    {
+        processCount = 0;
+    }
+
+    /// <summary>
+    /// 单次运行时进入的处理函数。
+    /// </summary>
+    public bool Process()
+    {
+        // 1. 从输入引脚 in0 获取字符串
+        string str = in0;
+        
+        // 2. 准备接收解析结果的变量
+        Script.Methods.RoiboxData[] roiBoxes;
+        float[] confidences;
+        int[] classIds; // 同样可以并行输出类别ID
+
+        // 3. 调用解析函数，它现在会同时返回多个数组
+        ParseToRoiBoxesAndScores(str, out roiBoxes, out classIds, out confidences);
+
+        // 4. 将处理结果赋给输出变量
+        roibox = roiBoxes;       // 输出 RoiboxData 数组
+        num = roiBoxes.Length; // 输出数组长度
+        // 假设 out2 用于输出类别ID数组, out3 用于输出置信度数组
+        label = classIds;       // 输出 int[] 类别数组
+        conf = confidences;    // 输出 float[] 置信度数组
+
+        return true;
+    }
+
+    /// <summary>
+    /// 解析字符串，并同时返回 RoiBoxData 数组、类别ID数组和置信度数组。
+    /// </summary>
+    private void ParseToRoiBoxesAndScores(string inputString, out Script.Methods.RoiboxData[] outRoiBoxes, out int[] outClassIds, out float[] outConfidences)
+    {
+        // 使用列表临时存储结果
+        var roiResults = new List<Script.Methods.RoiboxData>();
+        var idResults = new List<int>();
+        var confResults = new List<float>();
+
+        if (!string.IsNullOrWhiteSpace(inputString))
+        {
+            string[] records = inputString.Split(';');
+            foreach (string record in records)
+            {
+                if (string.IsNullOrWhiteSpace(record)) continue;
+                string[] values = record.Split(',');
+                if (values.Length != 6) continue;
+
+                int classId = 0, x = 0, y = 0, width = 0, height = 0;
+                float confidence = 0.0F;
+
+                bool success = int.TryParse(values[0], out classId) &&
+                               float.TryParse(values[1], NumberStyles.Any, CultureInfo.InvariantCulture, out confidence) &&
+                               int.TryParse(values[2], out x) &&
+                               int.TryParse(values[3], out y) &&
+                               int.TryParse(values[4], out width) &&
+                               int.TryParse(values[5], out height);
+
+                if (success)
+                {
+                    double centerX = x + width / 2.0;
+                    double centerY = y + height / 2.0;
+                    var roiBox = new Script.Methods.RoiboxData();
+                    roiBox.CenterX = (float)centerX;
+                    roiBox.CenterY = (float)centerY;
+                    roiBox.Width = width;
+                    roiBox.Height = height;
+                    roiBox.Angle = 0.0F;
+
+                    // 将三组数据分别添加到各自的列表中
+                    roiResults.Add(roiBox);
+                    idResults.Add(classId);
+                    confResults.Add(confidence);
+                }
+            }
+        }
+
+        // 将列表转换为数组并通过 out 参数返回
+        outRoiBoxes = roiResults.ToArray();
+        outClassIds = idResults.ToArray();
+        outConfidences = confResults.ToArray();
+    }
+}
